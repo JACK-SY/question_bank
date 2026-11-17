@@ -1,0 +1,137 @@
+---
+import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+
+const { sidebar, id } = Astro.locals.starlightRoute;
+// 单语言（defaultLocale: 'root'）下 id 即纯 slug；首页 id 为空串或 'index'
+const slug = (id ?? '').replace(/^\//, '');
+
+// 与 Header.astro 页签共用的板块前缀：当前页属于某板块时，侧栏只显示该板块的分组
+// （页签切换菜单）；首页无板块，显示完整目录便于总览。
+// 注意：学习页签覆盖 learn/ 下两个子板块（测试理论 + 工具实操），
+// 必须用整个 'learn' 前缀，拆成 learn/test-theory 会导致点「学习」页签时工具实操组被过滤。
+const SECTIONS = [
+	'banks/test-basics',
+	'banks/automation',
+	'banks/api-perf',
+	'banks/linux-sql',
+	'banks/python-coding',
+	'learn',
+];
+const active = SECTIONS.find((p) => slug.startsWith(p));
+
+// 运行时侧栏条目格式：link 为 { type: 'link', href, label }，
+// 分组为 { type: 'group', label, entries }（嵌套字段是 entries 而非 items）
+type Entry = {
+	type?: string;
+	label?: string;
+	href?: string;
+	entries?: Entry[];
+};
+
+// 收集一个侧栏条目（含嵌套分组）指向的全部页面路径（href 已含 base 前缀）
+function entryPaths(entry: Entry): string[] {
+	if (entry.type === 'link') return typeof entry.href === 'string' ? [entry.href] : [];
+	return (entry.entries ?? []).flatMap(entryPaths);
+}
+
+// 只保留包含当前板块页面的分组；直链页面条目（如"题库首页"）原样保留
+function filterList(list: Entry[]): Entry[] {
+	return list
+		.map((entry) => {
+			if (entry.type === 'link') return entry;
+			if (!active || !entryPaths(entry).some((p) => p.includes(active))) return null;
+			return { ...entry, entries: filterList(entry.entries ?? []) };
+		})
+		.filter((e): e is Entry => Boolean(e));
+}
+
+const visibleSidebar = active ? filterList(sidebar as Entry[]) : sidebar;
+---
+
+<div class="sidebar-search">
+	<input
+		type="text"
+		id="sidebar-filter"
+		placeholder="搜索菜单..."
+		autocomplete="off"
+	/>
+</div>
+
+<SidebarPersister>
+	<SidebarSublist sublist={visibleSidebar} />
+</SidebarPersister>
+
+<div class="md:sl-hidden">
+	<MobileMenuFooter />
+</div>
+
+<script>
+	function initSidebarFilter() {
+		const input = document.getElementById('sidebar-filter') as HTMLInputElement | null;
+		if (!input) return;
+
+		const sidebar = input.closest('.sidebar-content') ?? input.parentElement?.parentElement;
+		if (!sidebar) return;
+
+		input.addEventListener('input', () => {
+			const keyword = input.value.trim().toLowerCase();
+			const items = sidebar.querySelectorAll<HTMLLIElement>('sl-sidebar-state-persist li');
+
+			items.forEach((li) => {
+				if (!keyword) {
+					li.style.display = '';
+					return;
+				}
+				const text = li.textContent?.toLowerCase() ?? '';
+				li.style.display = text.includes(keyword) ? '' : 'none';
+			});
+
+			const groups = sidebar.querySelectorAll<HTMLDetailsElement>('sl-sidebar-state-persist details');
+			groups.forEach((details) => {
+				const visibleChildren = details.querySelectorAll<HTMLLIElement>('li:not([style*="display: none"])');
+				if (keyword && visibleChildren.length === 0) {
+					details.style.display = 'none';
+				} else {
+					details.style.display = '';
+					if (keyword) details.open = true;
+				}
+			});
+		});
+	}
+
+	initSidebarFilter();
+	document.addEventListener('astro:after-swap', initSidebarFilter);
+</script>
+
+<style>
+	.sidebar-search {
+		padding: 0.5rem 0 0.75rem;
+		position: sticky;
+		top: 0;
+		background: var(--sl-color-bg-sidebar);
+		z-index: 1;
+	}
+
+	#sidebar-filter {
+		width: 100%;
+		padding: 0.4rem 0.75rem;
+		border: 1px solid var(--sl-color-hairline);
+		border-radius: 6px;
+		background: var(--sl-color-bg);
+		color: var(--sl-color-text);
+		font-size: 13px;
+		outline: none;
+		box-sizing: border-box;
+	}
+
+	#sidebar-filter:focus {
+		border-color: var(--sl-color-accent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--sl-color-accent) 18%, transparent);
+	}
+
+	#sidebar-filter::placeholder {
+		color: var(--sl-color-gray-3);
+	}
+</style>

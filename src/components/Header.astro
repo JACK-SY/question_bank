@@ -1,0 +1,133 @@
+---
+/**
+ * 顶栏（题库版）：品牌区 + 五页签导航 + 右侧标语。
+ * - 页签高亮按当前 slug 前缀匹配（与 Sidebar.astro 的板块过滤共用同一套前缀）；
+ *   点击页签跳转到对应板块第一章，侧栏随之只显示该板块菜单。
+ * - 站点锁浅色主题，无 ThemeSelect；单语言无 LanguageSelect。
+ */
+import SiteTitle from 'virtual:starlight/components/SiteTitle';
+
+const route = Astro.locals.starlightRoute;
+// 本版 Starlight 的 Route 接口中 slug 字段名为 id；单语言（defaultLocale: 'root'）下 id 即纯 slug。
+// 首页的 id 可能为空字符串或 'index'，两者都视为首页。
+const slug = route.id ?? '';
+const isHome = !slug || slug === 'index';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// 页签定义：prefix 用于当前页高亮匹配；href 取该板块第一篇
+const tabs = [
+	{ label: '首页', prefix: 'index', href: `${base}/` },
+	{
+		label: '测试基础',
+		prefix: 'banks/test-basics',
+		href: `${base}/banks/test-basics/ch01-fundamentals`,
+	},
+	{
+		label: '自动化测试',
+		prefix: 'banks/automation',
+		href: `${base}/banks/automation/ch01-selenium`,
+	},
+	{
+		label: '接口与性能',
+		prefix: 'banks/api-perf',
+		href: `${base}/banks/api-perf/ch01-api`,
+	},
+	{
+		label: 'Linux与SQL',
+		prefix: 'banks/linux-sql',
+		href: `${base}/banks/linux-sql/ch01-linux-sql`,
+	},
+	{
+		label: 'Python',
+		prefix: 'banks/python-coding',
+		href: `${base}/banks/python-coding/ch01-basics`,
+	},
+	{
+		label: '学习',
+		prefix: 'learn',
+		href: `${base}/learn/test-theory/case-design-guide`,
+	},
+].map((t) => ({
+	...t,
+	active: t.prefix === 'index' ? isHome : slug.startsWith(t.prefix),
+}));
+---
+
+<header class="astro-header">
+	<div class="header-left">
+		<SiteTitle />
+	</div>
+	<nav class="header-tabs" aria-label="文档页签">
+		{tabs.map((tab) => (
+			<a class={`header-tab${tab.active ? ' active' : ''}`} href={tab.href}>{tab.label}</a>
+		))}
+	</nav>
+	<div class="header-right">
+		<span class="header-tagline">软件测试工程师 · 题库与学习</span>
+	</div>
+</header>
+
+<style>
+	.astro-header {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		background: var(--sl-color-bg-nav);
+		border-bottom: 1px solid var(--sl-color-hairline);
+	}
+	.header-left {
+		display: flex;
+		align-items: center;
+	}
+	.header-tabs {
+		display: flex;
+		align-items: stretch;
+		height: 100%;
+		gap: 0.25rem;
+	}
+	.header-tab {
+		display: inline-flex;
+		align-items: center;
+		padding: 0 14px;
+		font-size: 14px;
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+		position: relative;
+		white-space: nowrap;
+	}
+	.header-tab:hover {
+		color: var(--sl-color-accent-high);
+	}
+	/* 选中态：主色文字 + 底部 2px 指示条 */
+	.header-tab.active {
+		color: var(--sl-color-accent-high);
+		font-weight: 500;
+	}
+	.header-tab.active::after {
+		content: '';
+		position: absolute;
+		left: 10px;
+		right: 10px;
+		bottom: 0;
+		height: 2px;
+		border-radius: 2px;
+		background: var(--sl-color-accent);
+	}
+	.header-right {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+	}
+	.header-tagline {
+		font-size: 13px;
+		color: var(--sl-color-gray-3);
+		white-space: nowrap;
+	}
+	@media (max-width: 920px) {
+		.header-tabs,
+		.header-tagline {
+			display: none;
+		}
+	}
+</style>

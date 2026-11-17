@@ -1,0 +1,31 @@
+---
+import { ClientRouter } from 'astro:transitions';
+const { head } = Astro.locals.starlightRoute;
+---
+
+{/* 启用 Astro 视图过渡（客户端换页）：页签/侧边栏跳转不再整页刷新，
+    消除白屏闪烁与顶栏重绘抖动；各组件已监听 astro:after-swap 重新初始化 */}
+<ClientRouter />
+
+{head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+
+{/*
+	站点只提供浅色（主题切换按钮在 custom.css 里已隐藏）。Starlight 的
+	ThemeProvider 会按系统偏好把 html[data-theme] 设成 dark，导致代码块等
+	按 [data-theme] 切换的组件与锁定为浅色的色板不一致。此脚本必须在
+	ThemeProvider 之前执行 —— 本组件在 <head> 中先于它渲染。
+*/}
+<script is:inline>
+	try {
+		localStorage.setItem('starlight-theme', 'light');
+	} catch {}
+</script>
+
+<style is:inline>
+	:root {
+		--sl-nav-height: 48px;
+	}
+	.main-frame {
+		padding-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
+	}
+</style>

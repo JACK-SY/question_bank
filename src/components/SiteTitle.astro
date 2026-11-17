@@ -1,0 +1,31 @@
+---
+const { siteTitle } = Astro.locals.starlightRoute;
+---
+
+<div class="site-title sl-flex">
+	<svg class="site-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+		<rect x="2.5" y="3.5" width="19" height="17" rx="3.5" fill="#4E6FFF"></rect>
+		<path d="M7 8.5h10M7 12h10M7 15.5h5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"></path>
+	</svg>
+	<span class="site-name">{siteTitle}</span>
+</div>
+
+<style>
+	@layer starlight.core {
+		.site-title {
+			align-items: center;
+			gap: 0.55rem;
+			font-size: 17px;
+			font-weight: 600;
+			white-space: nowrap;
+			min-width: 0;
+		}
+		.site-mark {
+			flex-shrink: 0;
+		}
+		.site-name {
+			color: var(--sl-color-white);
+			letter-spacing: 0.02em;
+		}
+	}
+</style>

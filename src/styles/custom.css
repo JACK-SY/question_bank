@@ -1,0 +1,353 @@
+/* ---------------------------------------------------------------------------
+   色板 token
+   ---------------------------------------------------------------------------
+   Starlight 自带的色板全部写在 @layer starlight.base 里；本文件通过 customCss
+   引入且不在任何 layer 中，未分层样式优先级高于所有 layer，所以这里的 :root
+   会同时压过 Starlight 的深色（:root）和浅色（:root[data-theme='light']）两套
+   定义 —— 站点因此被锁定为浅色，与隐藏主题切换按钮的行为一致。
+
+   整条灰阶带 229 的蓝色调（与主色 #4E6FFF ≈ hsl(229,100%,65%) 同色相），
+   饱和度压得很低，只用来让中性色和主色不打架。
+--------------------------------------------------------------------------- */
+:root {
+	/* 文字由深到浅 */
+	--sl-color-white: hsl(229, 22%, 11%); /* 标题 */
+	--sl-color-gray-1: hsl(229, 18%, 17%);
+	--sl-color-gray-2: hsl(229, 12%, 27%); /* 正文 */
+	--sl-color-gray-3: hsl(229, 10%, 45%); /* 次级文字 */
+	--sl-color-gray-4: hsl(229, 10%, 60%);
+	/* 分隔与浅底 */
+	--sl-color-gray-5: hsl(229, 16%, 80%);
+	--sl-color-gray-6: hsl(229, 26%, 91%);
+	--sl-color-gray-7: hsl(229, 42%, 96%);
+	--sl-color-black: hsl(0, 0%, 100%);
+
+	/* 主色 */
+	--sl-color-accent-low: hsl(229, 100%, 94%);
+	--sl-color-accent: #4e6fff;
+	--sl-color-accent-high: hsl(229, 62%, 42%); /* 用于浅底上的强调文字 */
+
+	--sl-color-text: var(--sl-color-gray-2);
+	--sl-color-text-accent: var(--sl-color-accent);
+	--sl-color-text-invert: var(--sl-color-black);
+
+	/* 背景：正文纯白，导航与侧边栏低一档明度，形成独立面板 */
+	--sl-color-bg: hsl(0, 0%, 100%);
+	--sl-color-bg-nav: hsl(229, 100%, 98.5%);
+	--sl-color-bg-sidebar: hsl(229, 100%, 98.5%);
+	--sl-color-bg-inline-code: hsl(229, 34%, 94%);
+	--sl-color-bg-accent: var(--sl-color-accent);
+
+	--sl-color-hairline: hsl(229, 30%, 91%);
+	--sl-color-hairline-light: hsl(229, 24%, 87%);
+	--sl-color-hairline-shade: hsl(229, 30%, 93%);
+
+	--sl-color-backdrop-overlay: hsla(229, 20%, 30%, 0.55);
+
+	/* 排版与布局 */
+	--sl-font: 'Source Han Sans', 'Source Han Sans SC', 'Noto Sans CJK SC', '思源黑体', sans-serif;
+	--sl-font-mono: 'Source Code Pro', monospace;
+	--sl-sidebar-width: 18rem;
+	--sl-content-width: 60rem;
+	--sl-text-4xl: 1.775rem;
+	--sl-text-5xl: 2rem;
+}
+
+/* 站点不提供深浅切换 */
+starlight-theme-select {
+	display: none;
+}
+
+/* 固定滚动条槽位：不同页面内容高度不同，滚动条出现/消失会让整个内容区
+   左右横移（页签切换时表现为「抖一下」）。scrollbar-gutter: stable 让
+   滚动条槽位始终保留，内容不再横移。 */
+html {
+	scrollbar-gutter: stable;
+}
+
+/* --- 顶栏右侧控件：切换器统一 8px 圆角、同色描边 --------------------------- */
+
+/* 语系切换：与工作台切换器同高的描边外观；宽度自适应文案，避免「简体中文」被截断 */
+header starlight-lang-select label {
+	height: 34px;
+	border: 1px solid var(--sl-color-hairline);
+	border-radius: 8px;
+	background: var(--sl-color-bg);
+	box-sizing: border-box;
+	/* LanguageSelect 以内联样式写死 --sl-select-width: 7em，需 !important 覆盖 */
+	--sl-select-width: auto !important;
+}
+header starlight-lang-select label:hover {
+	border-color: var(--sl-color-accent);
+}
+/* select 聚焦时浏览器默认黑色轮廓很突兀，改为外层框变主色提示聚焦 */
+header starlight-lang-select select:focus-visible {
+	outline: none;
+}
+header starlight-lang-select label:has(select:focus-visible) {
+	border-color: var(--sl-color-accent);
+	box-shadow: 0 0 0 1px var(--sl-color-accent);
+}
+header starlight-lang-select select {
+	width: auto !important;
+	min-width: 8em;
+	height: 100%;
+	padding-block: 0;
+	font-size: 13px;
+}
+
+header {
+	background: var(--sl-color-bg-nav);
+	img {
+		height: 26px;
+	}
+	/* 仅品牌文字需要显示；语言/主题切换器内部的 .sr-only 辅助标签须保持隐藏 */
+	.site-title .sr-only {
+		display: inline-block;
+		height: 40px;
+		left: 176px;
+		font-family: monospace, sans-serif;
+		font-size: 16px;
+		font-weight: 500;
+		line-height: 24px;
+		letter-spacing: 0px;
+		color: var(--sl-color-white);
+		z-index: 2;
+		clip: unset;
+		top: 13px;
+	}
+}
+
+/* Starlight 外层 .header（PageFrame 槽）默认带 12px 上下内边距且内容不居中，
+   导致覆写后的顶栏内容整体偏上。改为无纵向内边距 + flex 垂直居中，
+   让品牌/页签/控件在 48px 高度内居中。
+   注意：Starlight 内部为 scoped 规则（.header[data-astro-cid-*]）优先级更高，需 !important */
+header.header {
+	display: flex !important;
+	align-items: center !important;
+	padding-block: 0 !important;
+}
+
+/* 内层自定义顶栏撑满外层 48px 高度与全宽：
+   高度撑满后页签 stretch 到底、选中指示条贴合底边，内部由 align-items 居中 */
+header.header > .astro-header {
+	width: 100%;
+	height: 100%;
+}
+
+/* --- 顶栏页签（Header.astro 覆写后补充的布局约束） ------------------------ */
+
+/* 平台介绍「核心能力」卡片网格（样式参照 docs-redesign-preview.html） */
+.card-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-auto-rows: 1fr; /* 每行卡片等高 */
+	gap: 14px;
+	margin: 18px 0;
+}
+.card-grid .card {
+	/* 抵消 Starlight 对 .sl-markdown-content 内相邻兄弟元素附加的 margin-block-start（1rem），
+	否则第 2 张起每张卡顶部多 16px 边距，导致首卡比其余卡高一行距 */
+	margin-top: 0;
+	border: 1px solid var(--sl-color-gray-6);
+	border-radius: 11px;
+	padding: 16px 18px;
+	background: var(--sl-color-black);
+	transition: 0.2s;
+	display: flex; /* 纵向布局，配合 grid 等高行保证卡片等高 */
+	flex-direction: column;
+}
+.card:hover {
+	border-color: var(--sl-color-accent);
+	box-shadow: 0 4px 16px rgba(78, 111, 255, 0.1);
+}
+.card .c-ic {
+	width: 34px;
+	height: 34px;
+	border-radius: 9px;
+	background: var(--sl-color-accent-low);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 17px;
+	margin-bottom: 10px;
+}
+.card .c-t {
+	font-size: 14.5px;
+	font-weight: 600;
+	margin-bottom: 4px;
+	color: var(--sl-color-white);
+}
+.card .c-d {
+	font-size: 12.5px;
+	color: var(--sl-color-gray-3);
+	line-height: 1.6;
+}
+@media (max-width: 50rem) {
+	.card-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* 步骤条（编号圆点 + 连线时间轴，样式参照 docs-redesign-preview.html 的 .steps/.step） */
+.steps {
+	counter-reset: st;
+	margin: 18px 0;
+}
+.steps .step {
+	/* 抵消 Starlight 对相邻兄弟元素附加的 margin-block-start（1rem），
+	否则第 2 步起连线与圆点之间会出现断开 */
+	margin-top: 0;
+	position: relative;
+	padding: 0 0 20px 42px;
+}
+/* 编号圆点：counter 自动编号 */
+.steps .step::before {
+	counter-increment: st;
+	content: counter(st);
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var(--sl-color-accent-low);
+	color: var(--sl-color-accent);
+	font-size: 13px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+/* 圆点下方垂直连线，最后一步不显示 */
+.steps .step::after {
+	content: '';
+	position: absolute;
+	left: 13px;
+	top: 30px;
+	bottom: 4px;
+	width: 1px;
+	background: var(--sl-color-gray-6);
+}
+.steps .step:last-child::after {
+	display: none;
+}
+.steps .step:last-child {
+	padding-bottom: 0; /* 最后一步无需留出连线间距 */
+}
+.steps .st-t {
+	font-weight: 600;
+	font-size: 14.5px;
+	color: var(--sl-color-white);
+}
+.steps .st-d {
+	font-size: 13.5px;
+	color: var(--sl-color-gray-3);
+	margin-top: 3px;
+	line-height: 1.6;
+}
+
+/* Starlight 原生 header 为 sticky；保持高度 48px（--sl-nav-height） */
+header.header-bar,
+header astro-slot {
+	scrollbar-width: transparent;
+}
+
+/* 页签导航在小屏隐藏后由 Starlight 移动端菜单承接，这里不做额外处理 */
+
+/* 工作台切换器右侧 ThemeSelect/SocialMarkdown 的间距微调 */
+.workspace-switcher + starlight-theme-select,
+.workspace-switcher + social-icons {
+	margin-left: 0.25rem;
+}
+
+/* --- 左侧目录 ----------------------------------------------------------- */
+
+nav.sidebar a {
+	font-size: 14px;
+	border-radius: 0 4px 4px 0;
+}
+
+/* 顶层直链（条目未分组的页签，如「常见问题」）：去掉 Starlight .large 默认加粗，
+   与其它页签的普通链接项观感一致；需放在 aria-current 规则前，保证选中态优先 */
+nav.sidebar a.large {
+	font-weight: 400;
+	color: var(--sl-color-gray-2);
+}
+
+/* 二级子分组标题：小号灰字（对齐预览稿 sb-group-title），与链接项形成层级区分 */
+nav.sidebar .top-level > li > details > summary,
+nav.sidebar .top-level > li > details > summary .large {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--sl-color-gray-3);
+	letter-spacing: 0.05em;
+}
+
+/* 三级分组标签（如「其他能力」内的「调用示例」）：不加粗、与普通链接同色，避免视觉过重 */
+nav.sidebar details details > summary .large {
+	font-size: 14px;
+	font-weight: 400;
+	color: var(--sl-color-gray-2);
+	letter-spacing: normal;
+}
+
+/* 子分组展开箭头随标题缩小 */
+nav.sidebar .top-level > li > details > summary .caret {
+	width: 0.875rem;
+	height: 0.875rem;
+}
+
+/* 链接项去掉 Starlight 原生竖线（预览稿为顶格平铺，靠字号/颜色区分层级） */
+nav.sidebar ul ul li {
+	border-inline-start: none;
+}
+
+/* 选中态：主色 8% 淡底 + 左侧 2px 强调条 */
+nav.sidebar a[aria-current='page'],
+nav.sidebar a[aria-current='page']:hover,
+nav.sidebar a[aria-current='page']:focus {
+	background: color-mix(in srgb, var(--sl-color-accent) 8%, transparent);
+	color: var(--sl-color-accent-high);
+	box-shadow: inset 2px 0 0 var(--sl-color-accent);
+	font-weight: 500;
+}
+
+/* --- 右侧目录 ----------------------------------------------------------- */
+
+.right-sidebar-container {
+	starlight-toc nav h2 {
+		font-size: 14px;
+	}
+}
+
+.right-sidebar-container a {
+	font-size: 14px;
+	color: var(--sl-color-gray-3);
+}
+
+.right-sidebar-container a[aria-current='true'],
+.right-sidebar-container a[aria-current='true']:hover {
+	color: var(--sl-color-accent);
+}
+
+.right-sidebar-panel a[aria-current='true'] {
+	display: flex !important;
+	align-items: center;
+	padding-left: 0 !important;
+}
+
+.right-sidebar-panel a[aria-current='true']::before {
+	content: '';
+	display: block;
+	width: 5px;
+	height: 5px;
+	min-width: 5px;
+	background: var(--sl-color-accent);
+	border-radius: 50%;
+	margin-right: 6px;
+}
+
+.large {
+	font-size: 14px;
+}

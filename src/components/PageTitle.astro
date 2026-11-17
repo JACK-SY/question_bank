@@ -1,0 +1,98 @@
+---
+const PAGE_TITLE_ID = '_top';
+const route = Astro.locals.starlightRoute;
+// 注意：本版 Starlight 的 Route 接口中 slug 字段名为 id，且带 locale 前缀
+const { id: slug, sidebar } = route;
+
+function findBreadcrumbs(
+	items: typeof sidebar,
+	targetSlug: string,
+	path: { label: string; href: string }[] = []
+): { label: string; href: string }[] | null {
+	for (const item of items) {
+		if (item.type === 'group') {
+			const result = findBreadcrumbs(item.entries, targetSlug, [
+				...path,
+				{ label: item.label, href: '' },
+			]);
+			if (result) return result;
+		} else if (item.type === 'link' && item.isCurrent) {
+			return [...path, { label: item.label, href: item.href }];
+		}
+	}
+	return null;
+}
+
+const breadcrumbs = findBreadcrumbs(sidebar, slug) ?? [];
+const homeLabel = '首页';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const homeHref = `${base}/`;
+---
+
+{breadcrumbs.length > 0 && (
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<ol>
+			<li><a href={homeHref}>{homeLabel}</a></li>
+			{breadcrumbs.map((crumb, i) => (
+				<li>
+					{i < breadcrumbs.length - 1 ? (
+						<span>{crumb.label}</span>
+					) : (
+						<span aria-current="page">{crumb.label}</span>
+					)}
+				</li>
+			))}
+		</ol>
+	</nav>
+)}
+
+<h1 id={PAGE_TITLE_ID}>{route.entry.data.title}</h1>
+
+<style>
+	@layer starlight.core {
+		h1 {
+			margin-top: 1rem;
+			font-size: var(--sl-text-h1);
+			line-height: var(--sl-line-height-headings);
+			font-weight: 600;
+			color: var(--sl-color-white);
+		}
+	}
+
+	.breadcrumbs {
+		margin-top: 0.5rem;
+	}
+
+	.breadcrumbs ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+
+	.breadcrumbs li:not(:last-child)::after {
+		content: '/';
+		margin-left: 0.25rem;
+		color: var(--sl-color-gray-4);
+	}
+
+	.breadcrumbs a {
+		color: var(--sl-color-gray-3);
+		text-decoration: none;
+	}
+
+	.breadcrumbs a:hover {
+		color: var(--sl-color-white);
+		text-decoration: underline;
+	}
+
+	.breadcrumbs [aria-current="page"] {
+		color: var(--sl-color-white);
+		font-weight: 500;
+	}
+</style>
